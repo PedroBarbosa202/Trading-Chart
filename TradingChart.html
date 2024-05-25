@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Square Drawing Example with Zoom</title>
+<style>
+    body {
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+        background-color: black;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100vh;
+        position: relative;
+    }
+
+    .Invest:hover {
+        background-color: rgba(255, 0, 0, 0.5); /* Semi-transparent red */
+        color: white;
+        user-select: none;
+    }
+    
+    .Invest:active {
+        transform: translateY(4px);
+        box-shadow: 0 5px #232323;
+    }
+
+
+    .Sell:hover {
+        background-color: rgba(255, 0, 0, 0.5); /* Semi-transparent red */
+        color: white;
+        user-select: none;
+    }
+    
+    .Sell:active {
+        transform: translateY(4px);
+        box-shadow: 0 5px #232323;
+    }
+
+    .control-panel {
+        position: absolute;
+        bottom: 2%;
+        left: 2%;
+        display: flex;
+        justify-content: center;
+        gap: 20px;
+    }
+
+    .control-panel input, .control-panel p, .control-panel div {
+        background-color: azure;
+        padding: 5px;
+        border-radius: 2px;
+    }
+
+    .control-panel p {
+        color: black;
+        margin: 0;
+    }
+
+    .control-panel div {
+        cursor: pointer;
+    }
+
+    @media (max-width: 768px) {
+        .control-panel {
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .control-panel input, .control-panel p, .control-panel div {
+            width: 80px;
+            text-align: center;
+        }
+    }
+
+    canvas {
+        position: absolute;
+        top: 0;
+        left: 0;
+    }
+
+    .canvas-container {
+        position: absolute;
+        top: 0;
+        left: 0;
+        overflow: hidden;
+        width: 100%;
+        height: 100%;
+    }
+</style>
+</head>
+<body>
+
+<div class="axis"></div>
+<div class="canvas-container">
+    <canvas id="Canvas" width="8000" height="6000"></canvas>
+</div>
+
+<div class="control-panel">
+    <div class="Invest" onclick="Invest()">Invest in Stock</div>
+    <div class="Sell" onclick="Sell()">Sell Bank</div>
+    <div>
+        <p>Money To Invest</p>
+        <input type="number" class="Ammount" id="Ammount" oninput="updateAmmountToInvest()"></input>
+    </div>
+    <div>
+        <p>Movey on Bank:</p>
+        <p id="Money">0</p>
+    </div>
+    <div>
+        <p>Stock on Bank:</p>
+        <p id="Stock">0</p>
+    </div>
+</div>
+
+<script>
+    // Main variables
+    let MoneyOnBank = 1000;
+    let StocksOnBank = 0;
+
+
+    // Graph functionality
+    const DistanceBetweenBars = 10;
+    let LastXPos = 0;
+    let LastMarketValue = 0;
+
+    const Delay = 500; 
+
+    document.getElementById('Money').textContent = MoneyOnBank;
+
+
+
+
+
+
+
+    function updateAmmountToInvest() {
+    AmmountToInvest = parseFloat(document.getElementById('Ammount').value);
+    }
+
+    // Invest and sell functions
+    function Invest()
+    {
+        if(LastMarketValue != 0 && AmmountToInvest <= MoneyOnBank)
+        {
+            StocksOnBank = AmmountToInvest / LastMarketValue;
+            document.getElementById('Money').textContent  = MoneyOnBank - AmmountToInvest;
+            document.getElementById('Stock').textContent  = StocksOnBank;
+
+            MoneyOnBank = MoneyOnBank - AmmountToInvest;
+        }
+    }
+
+    function Sell()
+    {
+        if(LastMarketValue != 0)
+        {
+            MoneyToReceive = StocksOnBank * LastMarketValue;
+            document.getElementById('Money').textContent  = MoneyToReceive;
+            document.getElementById('Stock').textContent  = 0;
+
+            MoneyOnBank = MoneyToReceive;
+        }
+    }
+
+    // Graph functionality
+    function getRandomDelay() {
+        return Math.floor(Delay);
+    }
+
+    function DrawBar() {
+        const canvas = document.getElementById('Canvas');
+        const context = canvas.getContext('2d');
+
+        let max = Math.random() * Math.random() * 700;
+        let ValueChanger = Math.random() < 0.5 ? 1 : -1;
+        let RandomMarketValue = Math.random() * max * ValueChanger;
+
+        if (RandomMarketValue <= 0)
+        {
+            RandomMarketValue = RandomMarketValue * -1;
+        }
+
+        let ColorOfBar = 0;
+        let BarsOffsets = 5;
+
+        const squareSize = 100;
+        let squareX = LastXPos + DistanceBetweenBars + BarsOffsets;
+        let squareY = window.innerHeight / 2 - (RandomMarketValue + LastMarketValue) / 2;
+
+        let barHeight = Math.abs(RandomMarketValue - LastMarketValue);
+
+        LastXPos = squareX;
+
+        if (LastMarketValue > RandomMarketValue) {
+            ColorOfBar = '#FF0000';
+        } else if (LastMarketValue < RandomMarketValue) {
+            ColorOfBar = '#008000';
+        }
+        drawRectangle(squareX, window.innerHeight / 2 - RandomMarketValue, window.innerHeight / 2 - LastMarketValue, DistanceBetweenBars, ColorOfBar);
+
+        context.fillStyle = '#FFFFFF';
+        context.fillRect(squareX - 2.2, window.innerHeight / 2 - RandomMarketValue + 200, DistanceBetweenBars + 4, 1);
+
+        LastMarketValue = RandomMarketValue;
+        setTimeout(DrawBar, getRandomDelay());
+    }
+
+    function drawRectangle(x, y1, y2, width, color) {
+        const canvas = document.getElementById('Canvas');
+        const context = canvas.getContext('2d');
+        context.fillStyle = color;
+
+        let rectangleHeight = Math.abs(y2 - y1);
+        context.fillRect(x, Math.min(y1, y2) + 200, width, rectangleHeight);
+    }
+
+    setTimeout(DrawBar, getRandomDelay());
+
+    let scale = 1;
+    let translateX = 0;
+    let translateY = 0;
+    const canvasContainer = document.querySelector('.canvas-container');
+    const canvas = document.getElementById('Canvas');
+
+    function updateTransform() {
+        canvas.style.transform = `scale(${scale}) translate(${translateX}px, ${translateY}px)`;
+        canvas.style.transformOrigin = '0 0';
+    }
+
+    function zoom(event) {
+        event.preventDefault();
+        const { offsetX, offsetY, deltaY } = event;
+
+        const zoomFactor = 1.1;
+        const oldScale = scale;
+
+        if (deltaY < 0) {
+            scale *= zoomFactor;
+        } else {
+            scale /= zoomFactor;
+        }
+
+        const rect = canvas.getBoundingClientRect();
+        const offsetXOnCanvas = (offsetX - rect.left) / oldScale;
+        const offsetYOnCanvas = (offsetY - rect.top) / oldScale;
+
+        translateX = offsetXOnCanvas * (1 - scale / oldScale) + translateX * (scale / oldScale);
+        translateY = offsetYOnCanvas * (1 - scale / oldScale) + translateY * (scale / oldScale);
+
+        updateTransform();
+    }
+
+    canvasContainer.addEventListener('wheel', zoom);
+
+    let isDragging = false;
+    let startX, startY;
+
+    function startPan(event) {
+        isDragging = true;
+        startX = event.clientX - translateX;
+        startY = event.clientY - translateY;
+    }
+
+    function pan(event) {
+        if (isDragging) {
+            translateX = event.clientX - startX;
+            translateY = event.clientY - startY;
+            updateTransform();
+        }
+    }
+
+    function endPan() {
+        isDragging = false;
+    }
+
+    canvasContainer.addEventListener('mousedown', startPan);
+    canvasContainer.addEventListener('mousemove', pan);
+    canvasContainer.addEventListener('mouseup', endPan);
+    canvasContainer.addEventListener('mouseout', endPan);
+
+</script>
+</body>
+</html>
